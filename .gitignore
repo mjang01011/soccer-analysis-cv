@@ -1,0 +1,5 @@
+# .gitignore
+training/config.py
+data/08fd33_4.mp4
+yolov8x.pt
+runs/detect/predict/08fd33_4.avigo
