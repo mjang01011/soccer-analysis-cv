@@ -1,9 +1,9 @@
 from ultralytics import YOLO
 
 # github.com/ultralytics/ultralytics
-model = YOLO('yolov8x')
+model = YOLO('models/finetuned_yolo_v5/best.pt')
 
-results = model.predict('data/08fd33_4.mp4', save=True)
+results = model.predict('input_videos/08fd33_4.mp4', save=True)
 
 print(results[0])
 print("===========")
