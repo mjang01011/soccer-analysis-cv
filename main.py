@@ -2,6 +2,7 @@ from utils import read_video, save_video
 from trackers import Tracker
 import cv2
 from team_assigner import TeamAssigner
+from player_ball_assigner import PlayerBallAssigner
 
 def main():
     # Read video
@@ -11,6 +12,9 @@ def main():
     # Initialize Tracker
     tracker = Tracker('models/finetuned_yolo_v5/best.pt')
     tracks = tracker.get_object_tracks(video_frames, read_from_stub=True, stub_path='stubs/track_stubs.pkl')
+    
+    # Interpolate ball position
+    tracks["ball"] = tracker.interpolate_ball_positions(tracks["ball"])
     
     # # Save cropped image of a player
     # for track_id, player in tracks["players"][0].items():
@@ -31,6 +35,14 @@ def main():
             tracks['players'][frame_num][player_id]['team'] = team
             tracks['players'][frame_num][player_id]['team_color'] = team_assigner.team_colors[team]
     
+    # Assign ball acquisition
+    player_assigner = PlayerBallAssigner()
+    for frame_num, player_track in enumerate(tracks['players']):
+        ball_bbox = tracks['ball'][frame_num][1]['bbox']
+        assigned_player = player_assigner.assign_balL_to_player(player_track, ball_bbox)
+        if assigned_player != -1:
+            tracks['players'][frame_num][assigned_player]['has_ball'] = True
+            
     # Draw object tracker
     output_video_frames = tracker.draw_annotations(video_frames, tracks)
     
