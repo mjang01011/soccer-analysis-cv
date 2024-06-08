@@ -102,7 +102,23 @@ class Tracker:
         cv2.drawContours(frame, [triangle_points], 0, (0,0,0), 2)
         return frame
     
-    def draw_annotations(self, frames, tracks):
+    def draw_team_ball_control(self, frame, frame_num, team_ball_control):
+        # Draw a semi-transparent rectangle to show possesssion %
+        overlay = frame.copy()
+        cv2.rectangle(overlay, (1350, 70), (1700, 140), (0, 0, 0), -1)
+        alpha = 0.4
+        cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+        team_ball_control_till_frame = team_ball_control[:frame_num + 1]
+        # Get the number of time each team has ball control
+        team_1_num_frames = team_ball_control_till_frame[team_ball_control_till_frame==1].shape[0]
+        team_2_num_frames = team_ball_control_till_frame[team_ball_control_till_frame==2].shape[0]
+        team_1 = team_1_num_frames/(team_1_num_frames+team_2_num_frames)
+        team_2 = team_2_num_frames/(team_1_num_frames+team_2_num_frames)
+        cv2.putText(frame, f"Team 1 Possession: {team_1*100:.2f}", (1300, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,255), 3)
+        cv2.putText(frame, f"Team 2 Possession: {team_2*100:.2f}", (1300, 137), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,255), 3)
+        return frame
+    
+    def draw_annotations(self, frames, tracks, team_ball_control):
         output_video_frames = []
         for frame_num, frame in enumerate(frames):
             frame = frame.copy()
@@ -114,14 +130,21 @@ class Tracker:
             for track_id, player in player_dict.items():
                 color = player.get("team_color", (0,0,255))
                 frame = self.draw_ellipse(frame, player["bbox"], color, track_id)
+                if player.get('has_ball', False):
+                    frame = self.draw_triangle(frame, player["bbox"], (0, 0, 255))
+                    
             # Draw referee
             for track_id, referee in referee_dict.items():
                 frame = self.draw_ellipse(frame, referee["bbox"], (0,255,255))
             # Draw ball
             for track_id, ball in ball_dict.items():
                 frame = self.draw_triangle(frame, ball["bbox"], (0, 255, 0))
+            
+            # Draw team ball possession
+            frame = self.draw_team_ball_control(frame, frame_num, team_ball_control)
         
             output_video_frames.append(frame)
+        
         return output_video_frames
     
     def interpolate_ball_positions(self, ball_positions):
@@ -134,3 +157,4 @@ class Tracker:
         
         ball_positions = [{1: {'bbox':x}} for x in df_ball_positions.to_numpy().tolist()]
         return ball_positions
+    

@@ -12,7 +12,7 @@ class TeamAssigner:
         image_2d = image.reshape(-1, 3)
 
         # Perform k-means clustering with two clusters
-        kmeans = KMeans(n_clusters=2, init="k-means++", n_init=1)
+        kmeans = KMeans(n_clusters=2, init="k-means++", n_init=10)
         kmeans.fit(image_2d)
         return kmeans
     
@@ -46,5 +46,7 @@ class TeamAssigner:
         player_color = self.get_player_color(frame, player_bbox)
         team_id = self.kmeans.predict(player_color.reshape(1,-1))[0]
         team_id += 1
+        if player_id == 101:
+            team_id = 1
         self.player_team_dict[player_id] = team_id
         return team_id
